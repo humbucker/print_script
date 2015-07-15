@@ -8,11 +8,10 @@
 # Example output: http://img.skitch.com/20100522-d1kkhfu6yub7gpye97ikfuubi2.png
 
 require 'rubygems'
+require 'bundler/setup'
 require 'ostruct'
 require 'term/ansicolor'
 require 'prawn'
-require 'prawn/layout/grid'
-require 'prawn/measurements'
 require 'pivotal-tracker'
 require 'optparse'
 require 'pp'
@@ -23,7 +22,7 @@ BASEDIR=File.dirname(__FILE__)
 # parsed from the command-line by
 # OptionParser.
 options = {}
-filters = {:state => ["unstarted", "started", "finished", "delivered", "accepted", "rejected"], :label => ["to-print"]}
+filters = {:state => ["unscheduled", "unstarted", "started", "finished", "delivered", "accepted", "rejected"], :label => ["to-print"]}
 DEV_STREAMS = {   
                   # Capex shop stream
                   "ts-shop-digi-bundling-ox" => "fa6c0c",
@@ -60,7 +59,7 @@ DEV_STREAMS = {
                   "none" => "cccccc"
                 }
                 
-PivotalTracker::Client.token = 'e3509189146f70a97cc7d12d2e9ba12c'
+PivotalTracker::Client.token = '27ea1ac7ac26077f4e25524db019859e'
 
 optparse = OptionParser.new do |opts|
   # TODO: Put command-line options here
@@ -99,7 +98,7 @@ end
 #projects = [465769]
 
 # real projects [online, hotels + pt]
-projects = [365927, 484029, 484915]
+projects = [1334584]
 
 projects.each do |project|
   
@@ -112,7 +111,9 @@ projects.each do |project|
 
   # --- Generate PDF with Prawn & Prawn::Document::Grid
 
-  filename = "/Users/mcinnsw6/development/print_script/cards_to_print/PT_to_print_"+Time.now.to_s+"_"+@a_project.name+".pdf"
+  filename = "/Users/johnny/downloads/cards_to_print/PT_to_print_"+Time.now.to_s+"_"+@a_project.name+".pdf"
+  
+  puts stories.length 
   
   if stories.length == 0
     puts "no stories to print" 
