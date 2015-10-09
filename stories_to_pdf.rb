@@ -21,7 +21,10 @@ BASEDIR=File.dirname(__FILE__)
 # This hash will hold all of the options
 # parsed from the command-line by
 # OptionParser.
-options = {}
+options = {   
+  projects: [1334584],
+  api_key: '27ea1ac7ac26077f4e25524db019859e'
+}
 filters = {:state => ["unscheduled", "unstarted", "started", "finished", "delivered", "accepted", "rejected"], :label => ["to-print"]}
 DEV_STREAMS = {   
                   # Capex shop stream
@@ -58,17 +61,15 @@ DEV_STREAMS = {
                   # Grey for everything else
                   "none" => "cccccc"
                 }
-                
-PivotalTracker::Client.token = '27ea1ac7ac26077f4e25524db019859e'
 
 optparse = OptionParser.new do |opts|
   # TODO: Put command-line options here
   
-  # This displays the help screen, all programs are
-  # assumed to have this option.
-  opts.on( '-h', '--help LABEL', 'defaults to label => "to-print" overide with -t "story,types" -s "state1,state2" -i "id1,id2,id3" -l "label_1,label_2"' ) do |l|
-    filters[:label] = l.split(',')
+  # This displays the help screen, all programs are assumed to have this option.
+  opts.on( '-h', '--help LABEL', 'defaults to label => "to-print" overide with -t "story,types" -s "state1,state2" -i "id1,id2,id3" -l "label_1,label_2"' ) do |h|
   end
+  
+  # filters
   opts.on( '-l', '--label LABEL', 'Define label filter comma seperated' ) do |l|
     filters[:label] = l.split(',')
   end
@@ -78,14 +79,24 @@ optparse = OptionParser.new do |opts|
   opts.on( '-s', '--state STATE', 'Define state filter comma seperated' ) do |s|
     filters[:state] = s.split(',')
   end
-  opts.on( '-i', '--ids IDS', 'Define IDs filter comma seperated' ) do |s|
-    filters[:id] = s.split(',')
+  opts.on( '-i', '--ids IDS', 'Define IDs filter comma seperated' ) do |i|
+    filters[:id] = i.split(',')
+  end
+  
+  # options
+  opts.on('-p', '--projects project_ids', 'Define which project IDs you want to run against') do |p|
+    options[:projects] = p.split(',')
+  end
+  opts.on('-k', '--api_key YOUR_API_KEY', 'Provide a Pivotal Tracker API key with permissions to access the projects you want to access') do |a|
+    options[:api_key] = a
   end
 end
 
 optparse.parse!
 
 puts filters.inspect
+
+PivotalTracker::Client.token = options[:api_key]
 
 class String; 
   include Term::ANSIColor; 
@@ -98,9 +109,8 @@ end
 #projects = [465769]
 
 # real projects [online, hotels + pt]
-projects = [1334584]
 
-projects.each do |project|
+options[:projects].each do |project|
   
   # --- Create cards objects
   @a_project = PivotalTracker::Project.find(project)
@@ -111,7 +121,7 @@ projects.each do |project|
 
   # --- Generate PDF with Prawn & Prawn::Document::Grid
 
-  filename = "/Users/johnny/downloads/cards_to_print/PT_to_print_"+Time.now.to_s+"_"+@a_project.name+".pdf"
+  filename = "pdfs/PT_to_print_"+Time.now.to_s+"_"+@a_project.name+".pdf"
   
   puts stories.length 
   
