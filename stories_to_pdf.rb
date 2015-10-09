@@ -21,10 +21,7 @@ BASEDIR=File.dirname(__FILE__)
 # This hash will hold all of the options
 # parsed from the command-line by
 # OptionParser.
-options = {   
-  projects: [1334584],
-  api_key: '27ea1ac7ac26077f4e25524db019859e'
-}
+options = {}
 filters = {:state => ["unscheduled", "unstarted", "started", "finished", "delivered", "accepted", "rejected"], :label => ["to-print"]}
 DEV_STREAMS = {   
                   # Capex shop stream
@@ -96,7 +93,17 @@ optparse.parse!
 
 puts filters.inspect
 
-PivotalTracker::Client.token = options[:api_key]
+if options[:api_key].nil?
+  raise ArgumentError, "No api key e.g. -k YOUR_API_KEY"
+else 
+  PivotalTracker::Client.token = options[:api_key]
+end
+
+if options[:projects].nil?
+  raise ArgumentError, "No projects specified e.g. -p 1234567"
+else
+  PivotalTracker::Client.token = options[:api_key]
+end
 
 class String; 
   include Term::ANSIColor; 
