@@ -6,8 +6,10 @@ GEM
       safe_yaml (~> 1.0.0)
     domain_name (0.5.24)
       unf (>= 0.0.5, < 1.0.0)
+    highline (1.7.8)
     http-cookie (1.0.2)
       domain_name (~> 0.5)
+    json (1.8.2)
     mime-types (2.6.1)
     mini_portile (0.6.2)
     netrc (0.10.3)
@@ -42,9 +44,11 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  highline
+  json (= 1.8.2)
   pivotal-tracker
   prawn
   term-ansicolor
 
 BUNDLED WITH
-   1.10.5
+   1.10.6

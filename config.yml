@@ -1,0 +1,15 @@
+options:
+      api_key: 27ea1ac7ac26077f4e25524db019859e
+      projects: 
+            - '1334584'
+filters:
+      label: to-print
+      state: 
+            - unscheduled
+            - planned
+            - unstarted
+            - started
+            - finished
+            - delivered
+            - accepted
+            - rejected

@@ -1,0 +1,13 @@
+options:
+      k: YOUR_API_KEY
+      p: YOUR PROJECT ID
+filters:
+      label: to-print
+      state: 
+            - unscheduled
+            - unstarted
+            - started
+            - finished
+            - delivered
+            - accepted
+            - rejected

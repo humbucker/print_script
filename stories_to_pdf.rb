@@ -15,49 +15,32 @@ require 'prawn'
 require 'pivotal-tracker'
 require 'optparse'
 require 'pp'
+require 'yaml'
+require 'highline'
 
 BASEDIR=File.dirname(__FILE__)
 
 # This hash will hold all of the options
 # parsed from the command-line by
 # OptionParser.
-options = {}
-filters = {:state => ["unscheduled", "unstarted", "started", "finished", "delivered", "accepted", "rejected"], :label => ["to-print"]}
-DEV_STREAMS = {   
-                  # Capex shop stream
-                  "ts-shop-digi-bundling-ox" => "fa6c0c",
 
-                  # Capex Statler stream
-                  "ts-bttd-cx" => "0a62da",
-                  "ts-hotels in BTTD" => "0a62da",                   # legacy
-                  "ts-hotel matching" => "0a62da",                   # legacy
-                  "ts-hotels-cx" => "0a62da",
 
-                  # Capex Themes/publishing tools stream
-                  "ts-themes-cx" => "7425b1",                # not in SAP yet
-                  "ts-publishing-tools-cx" => "7425b1",      # not in SAP yet
+config = YAML.load_file('config.yml')
+puts config.inspect
+options = config["options"]
+filters = config["filters"]
 
-                  # Opex BAU stream
-                  "ts-bau-development" => "00c000",
-                  "ts-bau-design" => "00c000",
-                  "ts-hotels-ox" => "00c000",
-                  "ts-shop-ox" => "00c000",
-                  "ts-advertising-ox" => "00c000",
-                  "ts-marketing-ox" => "00c000",
-                  "ts-editorial-ox" => "00c000",
-                  "ts-poi-place-tagging-ox" => "00c000",      # not in SAP yet
-
-                  # Opex engineering stream
-                  "ts-bau-engineering" => "000000",           # legacy
-                  "ts-janrain" => "000000",                   # legacy
-                  "ts-engineering-ox" => "000000",            # not in SAP yet
-
-                  # Non-project time categories
-                  "ts-meetings-hr-admin" => "cccccc",        
-     
+CATEGORIES =  {
                   # Grey for everything else
                   "none" => "cccccc"
-                }
+              }
+
+STORY_TYPES = {
+                  "feature" => "f59e3a",
+                  "bug" => "cc1619",
+                  "chore" => "505050",
+                  "release" => "407aa5" 
+              }
 
 optparse = OptionParser.new do |opts|
   # TODO: Put command-line options here
@@ -68,56 +51,47 @@ optparse = OptionParser.new do |opts|
   
   # filters
   opts.on( '-l', '--label LABEL', 'Define label filter comma seperated' ) do |l|
-    filters[:label] = l.split(',')
+    filters["label"] = l.split(',')
   end
   opts.on( '-t', '--story_type CARD_TYPE', 'Define story type filter comma seperated' ) do |t|
-    filters[:story_type] = t.split(',')
+    filters["story_type"] = t.split(',')
   end
   opts.on( '-s', '--state STATE', 'Define state filter comma seperated' ) do |s|
-    filters[:state] = s.split(',')
+    filters["state"] = s.split(',')
   end
   opts.on( '-i', '--ids IDS', 'Define IDs filter comma seperated' ) do |i|
-    filters[:id] = i.split(',')
+    filters["id"] = i.split(',')
   end
   
   # options
   opts.on('-p', '--projects project_ids', 'Define which project IDs you want to run against') do |p|
-    options[:projects] = p.split(',')
+    options["projects"] = p.split(',')
   end
   opts.on('-k', '--api_key YOUR_API_KEY', 'Provide a Pivotal Tracker API key with permissions to access the projects you want to access') do |a|
-    options[:api_key] = a
+    options["api_key"] = a
   end
 end
 
 optparse.parse!
 
 puts filters.inspect
+puts options.inspect
 
-if options[:api_key].nil?
+if options["api_key"].nil?
   raise ArgumentError, "No api key e.g. -k YOUR_API_KEY"
-else 
-  PivotalTracker::Client.token = options[:api_key]
-end
-
-if options[:projects].nil?
+elsif options["projects"].nil?
   raise ArgumentError, "No projects specified e.g. -p 1234567"
 else
-  PivotalTracker::Client.token = options[:api_key]
+  PivotalTracker::Client.token = options["api_key"]
 end
+
 
 class String; 
   include Term::ANSIColor; 
 end
 
-# test project
-#projects = [456831]
 
-# epics
-#projects = [465769]
-
-# real projects [online, hotels + pt]
-
-options[:projects].each do |project|
+options["projects"].each do |project|
   
   # --- Create cards objects
   @a_project = PivotalTracker::Project.find(project)
@@ -140,9 +114,9 @@ options[:projects].each do |project|
       Prawn::Document.generate(filename,
        :page_layout => :landscape,
        :margin      => [10, 10, 10, 10],
-       :page_size   => [216,360]) do |pdf|
+       :page_size   => [298,420]) do |pdf|
 
-        pdf.font "#{Prawn::BASEDIR}/data/fonts/DejaVuSans.ttf"
+        pdf.font "Helvetica"
         
         stories.each_with_index do |card, i|        
           card_theme = {}              
@@ -150,8 +124,9 @@ options[:projects].each do |project|
           width = pdf.bounds.right-padding*2
           pdf.start_new_page if i>0
 
-          # set the card icon
+          # set the card theme
           card_theme[:icon] = card.story_type+".png"
+          card_theme[:color] = STORY_TYPES[card.story_type]
             
           # If it is a design job card, then it is a different colour
           if card.labels.split(",").include? "design"   
@@ -164,9 +139,9 @@ options[:projects].each do |project|
           end
           
           # set the theme color    
-          dev_stream = (card.labels.split(",") & (DEV_STREAMS.keys))
+          # category = (card.labels.split(",") & (CATEGORIES.keys))
           
-          card_theme[:color] = (dev_stream.nil? | dev_stream.empty?) ? DEV_STREAMS["none"] : DEV_STREAMS[dev_stream[0]]
+          # card_theme[:color] = (category.nil? | category.empty?) ? CATEGORIES["none"] : CATEGORIES[category[0]]
                         
           pdf.stroke_color = card_theme[:color]
           pdf.line_width = 10
@@ -177,7 +152,7 @@ options[:projects].each do |project|
                 
           pdf.bounding_box [pdf.bounds.left+padding, pdf.bounds.top-padding], :width => width do
             pdf.text_box card.name.force_encoding("utf-8"), :size => 24, :width => width, :height => 100, :at => [0,0], :overflow => :shrink_to_fit
-            pdf.text_box "#"+card.id.to_s.force_encoding("utf-8"), :size => 16, :width => width-15, :height => 20, :at => [0,-100]
+            pdf.text_box "#"+card.id.to_s.force_encoding("utf-8"), :size => 16, :width => width-15, :height => 20, :at => [0,-120]
             pdf.fill_color "000000"
           end
 
@@ -224,7 +199,7 @@ options[:projects].each do |project|
           pdf.fill_color = card_theme[:color]
           pdf.stroke_color = card_theme[:color]                    
           
-          pdf.image "#{BASEDIR}/"+card_theme[:icon], :at => [270, 70], :width => 60
+          pdf.image "#{BASEDIR}/"+card_theme[:icon], :at => [330, 70], :width => 60
           
         puts "* #{card.name}"
         end
@@ -232,11 +207,20 @@ options[:projects].each do |project|
 
       puts ">>> Generated PDF file in '#{filename}' with #{stories.size} stories:".black.on_green
 
+      cli = HighLine.new
+      add_p = cli.ask "To label those stories with p enter y"
+      remove_to_p = cli.ask "To remove to-print label enter y"
+
       puts ">>> Updating pivotal labels".black.on_green
-      
+
       stories.each do |card|
-        card.labels = (card.labels.split(",") - ['to-print'] + ['p']).flatten.join(",") unless card.labels.nil?
-        card.update unless card.labels.nil?
+
+        labels = (card.labels.nil? ? [] : card.labels.split(","))
+
+        labels -= ['to-print'] if remove_to_p == "y"
+        labels += ['p'] if add_p == "y"
+        card.labels = labels.flatten.uniq.join(",")
+        card.update
       end
 
       system("open", filename)
