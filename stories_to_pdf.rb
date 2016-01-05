@@ -36,9 +36,9 @@ CATEGORIES =  {
               }
 
 STORY_TYPES = {
-                  "feature" => "f59e3a",
-                  "bug" => "cc1619",
-                  "chore" => "505050",
+                  "feature" => "ffa500",
+                  "bug" => "ff0000",
+                  "chore" => "7f7f7f",
                   "release" => "407aa5" 
               }
 
@@ -153,13 +153,15 @@ options["projects"].each do |project|
           pdf.bounding_box [pdf.bounds.left+padding, pdf.bounds.top-padding], :width => width do
             pdf.text_box card.name.force_encoding("utf-8"), :size => 24, :width => width, :height => 100, :at => [0,0], :overflow => :shrink_to_fit
             pdf.text_box "#"+card.id.to_s.force_encoding("utf-8"), :size => 16, :width => width-15, :height => 20, :at => [0,-120]
+            pdf.text_box card.description.force_encoding("utf-8"), :size => 10, :width => width, :height => 80, :at => [0,-160], :overflow => :shrink_to_fit
             pdf.fill_color "000000"
           end
 
-          labels = (card.labels.nil? ? "" : (card.labels.split(",") - ['to-print']- ['ux']- ['ui']- ['design'] - ['retro']).join(" | ")).force_encoding("utf-8")
+          labels = (card.labels.nil? ? "" : (card.labels.split(",") - ['to-print'] - ['ux'] - ['ui'] - ['design'] - ['p'] - ['retro']).join(" | ")).force_encoding("utf-8")
 
-          pdf.text_box labels, :size => 14, :at => [10, 20], :width => width-15-60, :height => 20, :overflow => :shrink_to_fit unless labels.nil?
+          pdf.text_box labels, :size => 14, :at => [70, 20], :width => width-15-60-70, :height => 20, :overflow => :shrink_to_fit unless labels.nil?
 
+=begin
           # --- add a ui checkbox for cards tagged with 'ux'
           if card.labels.split(",").include? "ux"
             pdf.fill_color "666666"
@@ -189,11 +191,12 @@ options["projects"].each do |project|
                 pdf.fill_circle [120, 40], 8
               end
           end
+=end
 
           # only regular cards get the points
           if card.story_type == "feature"
             pdf.text_box card.estimate.to_s+" points",
-              :size => 16, :at => [10, 60], :width => width-15, :overflow => :shrink_to_fit unless card.estimate == -1
+              :size => 16, :at => [10, 20], :width => 60, :overflow => :shrink_to_fit unless card.estimate == -1
           end
 
           pdf.fill_color = card_theme[:color]
@@ -220,7 +223,7 @@ options["projects"].each do |project|
         labels -= ['to-print'] if remove_to_p == "y"
         labels += ['p'] if add_p == "y"
         card.labels = labels.flatten.uniq.join(",")
-        card.update
+        card.update unless remove_to_p != "y" and add_p != "y"
       end
 
       system("open", filename)
